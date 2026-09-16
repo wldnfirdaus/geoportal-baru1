@@ -1,2 +1,3 @@
 # geoportal-baru1
-wildan
+PELATIHAN WEBGIS BATCH 1 
+WILDAN FIRDAUS
