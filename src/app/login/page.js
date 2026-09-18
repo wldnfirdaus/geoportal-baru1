@@ -1,26 +1,24 @@
-/* =====================================================================
-   STEP 0: STRUKTUR KOMPONEN (Konsep dasar React/Next.js)
-   =====================================================================
-   Ini contoh konsep PALING dasar di React: satu halaman (page) bisa
-   dipecah jadi komponen-komponen kecil yang terpisah filenya, lalu
-   di-"pasang" lagi lewat import - seperti menyusun lego.
+import { Box } from "@mui/material";
+import { palette } from "../../theme/theme"
+import LoginForm from "./LoginForm";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../api/auth/[...nextauth]/route";
 
-   Di bawah ini, import dan pemakaian <LoginForm /> sengaja DI-COMMENT
-   dulu. Uncomment KEDUA baris berikut (baris import di atas, dan baris
-   <LoginForm /> di dalam return) untuk menghubungkan halaman ini dengan
-   komponen form login yang ada di file LoginForm.jsx.
-   ===================================================================== */
-
-import React from 'react'
-import LoginForm from './LoginForm'
-
-const Page = () => {
+export default async function LoginPage() {
+    const session = await getServerSession(authOptions);
     return (
-        <div>
-            {/* page */}
-            <LoginForm />
-        </div>
-    )
+        <Box
+            sx={{
+                minHeight: "100vh",
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: palette.bg,
+                px: 2,
+            }}
+        >
+            <LoginForm session={session}/>
+        </Box>
+    );
 }
-
-export default Page

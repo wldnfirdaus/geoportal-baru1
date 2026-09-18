@@ -1,177 +1,186 @@
-'use client'
-// 'use client' WAJIB ada di baris paling atas file, karena komponen ini
-// akan memakai useState & useRef (fitur interaktif) di STEP 3 - fitur ini
-// hanya boleh jalan di "Client Component", bukan "Server Component" bawaan
-// Next.js App Router.
+"use client";
 
-import React, { useRef, useState } from 'react'
+import { Alert, Button, CircularProgress, IconButton, InputAdornment, Link, Paper, TextField, Typography } from '@mui/material'
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react'
+import { palette } from "../../theme/theme"
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { signIn } from 'next-auth/react';
 
-/* =====================================================================
-   CARA PAKAI FILE INI
-   =====================================================================
-   Ada 3 STEP di komponen ini:
+const LoginForm = ({ session }) => {
+    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-   STEP 1 (STRUKTUR JSX) -
-    AKTIF dari awal. Cuma menampilkan form polos
-    tanpa gaya visual dan tanpa fungsi apa pun.
+    useEffect(() => {
+        if (session) {
+            router.push("/internal")
+        }
+    }, [session]);
 
-   STEP 2 (STYLE) - 
-    Cari blok <style jsx> di bagian BAWAH,
-    di dalam komentar JSX. Hapus pembuka di sekitarnya.
-    Next.js punya dukungan bawaan untuk styled - jsx ini,
-    jadi TIDAK perlu install package apa pun.
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
 
-    STEP 3(LOGIC) -
-    Ada di 2 tempat yang harus diubah bersamaan:
-    a) Uncomment blok besar di ATAS 'return' ini
-    (deklarasi useRef, useState, handleSubmit).
-    b) Edit manual 3 baris di dalam JSX(return):
-    - Tambahkan  onSubmit = { handleSubmit }ke tag < form >
-    - Tambahkan  ref = { emailRef } ke < input id = "email" >
-    - Tambahkan  ref = { passwordRef } ke < input id = "password" >
-    - Ganti < p className = "message" ></p > menjadi:
-    <p className={`message ${message.type}`}>{message.text}</p>
-    Bagian(b) TIDAK bisa cuma di - uncomment karena
-    atribut seperti onSubmit / ref akan error kalau
-    variabelnya(handleSubmit / emailRef) belum
-    dideklarasikan - makanya harus 2 langkah.
-    Kredensial uji coba di STEP 3: admin @mail.com / admin123
-    ===================================================================== */
+        if (!email || !password) {
+            setError("Email dan password wajib diisi!");
+            return;
+        }
 
-const LoginForm = () => {
-    const emailRef = useRef(null)
-    const passwordRef = useRef(null)
-    const [message, setMessage] = useState({ text: '', type: '' })
+        setLoading(true);
 
-    const VALID_EMAIL = 'admin@mail.com'
-    const VALID_PASSWORD = 'admin123'
+        const result = await signIn("geoportal-credential", {
+            email,
+            password,
+            redirect: false,
+        });
 
-    const handleSubmit = (e) => {
-      e.preventDefault() // mencegah reload halaman (perilaku default form)
+        if (result?.error) {
+            setError(result.error);
+            setLoading(false);
+            return;
+        }
 
-      const emailValue = emailRef.current.value.trim()
-      const passwordValue = passwordRef.current.value
+        // arahkan ke folder route internal yang benar: /web-internal
+        router.push("/internal");
+    };
 
-      if (emailValue === VALID_EMAIL && passwordValue === VALID_PASSWORD) {
-        setMessage({
-          text: `Login berhasil! Selamat datang, ${emailValue}`,
-          type: 'success',
-        })
-      } else {
-        setMessage({ text: 'Email atau password salah.', type: 'error' })
-      }
+    const handleRegisterRedirect = () => {
+        router.push("/register");
     }
-  
 
     return (
-        <div className="login-container">
-            <h1>Halaman Login</h1>
+        <Paper
+            elevation={0}
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
+                width: "100%",
+                maxWidth: 400,
+                p: 4,
+                backgroundColor: palette.surface,
+                border: `1px solid ${palette.line}`,
+                borderRadius: 2,
+            }}
+        >
+            <Typography
+                variant="h5"
+                sx={{ color: palette.text, fontWeight: 600, mb: 0.5 }}
+            >
+                Masuk
+            </Typography>
+            <Typography
+                variant="body2"
+                sx={{
+                    color: palette.muted,
+                }}
+            >
+                Silahkan login untuk melanjutkan
+            </Typography>
 
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label htmlFor="email">Email</label>
-                    <input
-                        type="text"
-                        id="email"
-                        name="email"
-                        placeholder="Masukkan email"
-                    />
-                </div>
+            {error && (
+                <Alert
+                    severity="error"
+                    sx={{
+                        mb: 2,
+                        backgroundColor: "rgba(201, 162, 39, 0.08)",
+                        color: palette.brass,
+                        border: `1px solid ${palette.brassDim}`,
+                        "& .MuiAlert-icon": {
+                            color: palette.brass,
+                        },
+                    }}
+                >
+                    {error}
+                </Alert>
+            )}
 
-                <div className="form-group">
-                    <label htmlFor="password">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Masukkan password"
-                    />
-                </div>
+            <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                margin="normal"
+                autoComplete="email"
+                disabled={loading}
+            />
 
-                <button type="submit" className="btn-login">
-                    Login
-                </button>
-            </form>
+            <TextField
+                fullWidth
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                margin="normal"
+                disabled={loading}
+                slotProps={{
+                    input: {
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    onClick={() => setShowPassword((prev) => !prev)}
+                                    edge="end"
+                                    size="small"
+                                >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                            </InputAdornment>
+                        ),
+                    },
+                }}
+            />
 
-            <p className="message">{message.text}</p>
+            <Link
+                component="button"
+                type="button"
+                variant="body2"
+                underline="hover"
+                onClick={handleRegisterRedirect}
+                sx={{
+                    color: palette.muted,
+                    display: "block",
+                    mt: 1,
+                    textAlign: "left",
+                    cursor: "pointer",
+                    "&:hover": {
+                        color: palette.text,
+                    },
+                }}
+            >
+                Belum memiliki akun? Register.
+            </Link>
 
-      <style jsx>{`
-        .login-container {
-          background-color: #ffffff;
-          padding: 32px 28px;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          width: 100%;
-          max-width: 360px;
-          margin: 80px auto;
-          font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .login-container h1 {
-          margin-top: 0;
-          margin-bottom: 24px;
-          font-size: 22px;
-          text-align: center;
-          color: #1a1a1a;
-        }
-
-        .form-group {
-          margin-bottom: 16px;
-        }
-
-        .form-group label {
-          display: block;
-          margin-bottom: 6px;
-          font-size: 14px;
-          color: #333333;
-        }
-
-        .form-group input {
-          width: 100%;
-          padding: 10px 12px;
-          border: 1px solid #cccccc;
-          border-radius: 4px;
-          font-size: 14px;
-          box-sizing: border-box;
-        }
-
-        .form-group input:focus {
-          outline: none;
-          border-color: #4a90e2;
-        }
-
-        .btn-login {
-          width: 100%;
-          padding: 10px;
-          background-color: #4a90e2;
-          color: #ffffff;
-          border: none;
-          border-radius: 4px;
-          font-size: 15px;
-          cursor: pointer;
-          margin-top: 8px;
-        }
-
-        .btn-login:hover {
-          background-color: #3a7bc8;
-        }
-
-        .message {
-          margin-top: 16px;
-          text-align: center;
-          font-size: 14px;
-          min-height: 18px;
-        }
-
-        .message.success {
-          color: #2e7d32;
-        }
-
-        .message.error {
-          color: #c62828;
-        }
-      `}</style>
-        </div>
+            <Button
+                type="submit"
+                fullWidth
+                disabled={loading}
+                sx={{
+                    mt: 2,
+                    py: 1.2,
+                    backgroundColor: palette.moss,
+                    color: palette.text,
+                    fontWeight: 600,
+                    textTransform: "none",
+                    "&:hover": {
+                        backgroundColor: palette.mossDim,
+                    },
+                    "&.Mui-disabled": {
+                        backgroundColor: palette.mossDim,
+                        color: palette.muted,
+                    },
+                }}
+            >
+                {loading ? (
+                    <CircularProgress size={22} sx={{ color: palette.text }} />
+                ) : (
+                    "Login"
+                )}
+            </Button>
+        </Paper>
     )
 }
 
